@@ -8,9 +8,18 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
-
+	"encoding/json"
 	"github.com/drone/drone-plugin-go/plugin"
 )
+
+type BuildInfoType struct {
+	Owner	string    `json:"owner"`
+	Repository string `json:"repository"`
+	Branch string `json:"branch"`
+	Version string `json:"version"`
+	Build int `json:"build"`
+	Slug string `json:"slug"`
+}
 
 type Save struct {
 	// Absolute or relative path
@@ -71,7 +80,8 @@ func main() {
 	}
 	// Set the Tag value
 	if vargs.Tag.Len() == 0 {
-		vargs.Tag = StrSlice{[]string{"latest"}}
+		var buildTag = getTagFromBuildInfo(workspace.Path)
+		vargs.Tag = StrSlice{ []string{"latest", buildTag} }
 	}
 	// Get absolute path for 'save' file
 	if len(vargs.Save.File) != 0 {
@@ -263,6 +273,33 @@ func authorize(d *Docker) error {
 	var path = "/root/.dockercfg" // TODO should probably use user.Home() for good measure
 	var data = fmt.Sprintf(dockerconf, d.Registry, d.Auth, d.Email)
 	return ioutil.WriteFile(path, []byte(data), 0644)
+}
+
+// Owner	string
+// Repository string
+// Branch string
+// Version string
+// Build int
+// Slug string
+
+// conditionally read in .buildinfo.json and return resulting data structure
+func getTagFromBuildInfo(workspacePath string) string {
+	var path = filepath.Join(workspacePath, ".buildinfo.json")
+	_, err := os.Stat( path )
+	if( err == nil ) {
+		file, fileErr := ioutil.ReadFile( path )
+		if fileErr == nil {
+			var jsonobject BuildInfoType
+			json.Unmarshal( file, &jsonobject )
+			tag := fmt.Sprintf( "%s_%s_%s_%s_%d_%s", jsonobject.Owner, jsonobject.Repository, jsonobject.Branch, jsonobject.Version, jsonobject.Build, jsonobject.Slug )
+			fmt.Println("Tag generated from .buildinfo.json:", tag)
+			return tag
+		} else {
+			return ""
+		}
+	} else {
+		return ""
+	}
 }
 
 var dockerconf = `
