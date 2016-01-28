@@ -16,6 +16,14 @@ The build number is calculated by looking at the number of commits since a versi
 
 It presently reads this information from a `.buildinfo.json` file which we generate in a seperate build step using the Node module `buildgoggles`.
 
+When a tag is generated from `.buildinfo.json` this plugin will also write the name of the resulting Docker image to `.docker.json` in the following data structure:
+
+```json
+{
+	"image": "your/image:tag"
+}
+```
+
 ## Docker
 
 Build the Docker container:

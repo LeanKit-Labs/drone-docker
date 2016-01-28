@@ -81,6 +81,8 @@ func main() {
 	// Set the Tag value
 	if vargs.Tag.Len() == 0 {
 		var buildTag = getTagFromBuildInfo(workspace.Path)
+		var imageName = fmt.Sprintf("%s:%s", vargs.Repo, buildTag)
+		writeImageName(workspace.Path, imageName)
 		vargs.Tag = StrSlice{ []string{"latest", buildTag} }
 	}
 	// Get absolute path for 'save' file
@@ -300,6 +302,14 @@ func getTagFromBuildInfo(workspacePath string) string {
 	} else {
 		return ""
 	}
+}
+
+func writeImageName(workspacePath string, imageName string) {
+	fmt.Println("Writing image name to .docker.json.")
+	var path = filepath.Join(workspacePath, ".docker.json")
+	data := map[string]string{"image": imageName}
+	bytes, _ := json.Marshal(data)
+	ioutil.WriteFile( path, bytes, 0644 )
 }
 
 var dockerconf = `
