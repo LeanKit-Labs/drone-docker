@@ -277,23 +277,16 @@ func authorize(d *Docker) error {
 	return ioutil.WriteFile(path, []byte(data), 0644)
 }
 
-// Owner	string
-// Repository string
-// Branch string
-// Version string
-// Build int
-// Slug string
-
 // conditionally read in .buildinfo.json and return resulting data structure
 func getTagFromBuildInfo(workspacePath string) string {
 	var path = filepath.Join(workspacePath, ".buildinfo.json")
-	_, err := os.Stat( path )
-	if( err == nil ) {
-		file, fileErr := ioutil.ReadFile( path )
+	_, err := os.Stat(path)
+	if(err == nil) {
+		file, fileErr := ioutil.ReadFile(path)
 		if fileErr == nil {
 			var jsonobject BuildInfoType
-			json.Unmarshal( file, &jsonobject )
-			tag := fmt.Sprintf( "%s_%s_%s_%s_%d_%s", jsonobject.Owner, jsonobject.Repository, jsonobject.Branch, jsonobject.Version, jsonobject.Build, jsonobject.Slug )
+			json.Unmarshal(file, &jsonobject)
+			tag := fmt.Sprintf("%s_%s_%s_%s_%d_%s", jsonobject.Owner, jsonobject.Repository, jsonobject.Branch, jsonobject.Version, jsonobject.Build, jsonobject.Slug)
 			fmt.Println("Tag generated from .buildinfo.json:", tag)
 			return tag
 		} else {
@@ -309,7 +302,7 @@ func writeImageName(workspacePath string, imageName string) {
 	var path = filepath.Join(workspacePath, ".docker.json")
 	data := map[string]string{"image": imageName}
 	bytes, _ := json.Marshal(data)
-	ioutil.WriteFile( path, bytes, 0644 )
+	ioutil.WriteFile(path, bytes, 0644)
 }
 
 var dockerconf = `

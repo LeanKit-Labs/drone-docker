@@ -24,6 +24,11 @@ When a tag is generated from `.buildinfo.json` this plugin will also write the n
 }
 ```
 
+### Tag Format
+The tag produced is an `_` delimited set of values:
+
+`owner_repository_branch_version_buildNumber_commitSlug`
+
 ## Docker
 
 Build the Docker container:
