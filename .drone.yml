@@ -12,10 +12,10 @@ build:
 
 publish:
   docker:
-    username: drone
+    username: $$DOCKER_USER
     password: $$DOCKER_PASS
     email: $$DOCKER_EMAIL
-    repo: plugins/drone-docker
+    repo: leankit/drone-docker
     when:
       branch: master
 
