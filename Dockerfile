@@ -2,7 +2,7 @@
 #
 #     docker build --rm=true -t plugins/drone-docker .
 
-FROM rancher/docker:1.9.1
+FROM rancher/docker
 
 ADD drone-docker /go/bin/
 VOLUME /var/lib/docker
