@@ -8,17 +8,13 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
-	"encoding/json"
+	// "encoding/json"
+	"gopkg.in/yaml.v2"
 	"github.com/drone/drone-plugin-go/plugin"
 )
 
 type BuildInfoType struct {
-	Owner	string    `json:"owner"`
-	Repository string `json:"repository"`
-	Branch string `json:"branch"`
-	Version string `json:"version"`
-	Build int `json:"build"`
-	Slug string `json:"slug"`
+	Tags []string `yaml:"tags"`
 }
 
 type Save struct {
@@ -78,12 +74,17 @@ func main() {
 	if len(vargs.Context) == 0 {
 		vargs.Context = "."
 	}
-	// Set the Tag value
+	// Use tags if set in .drone.yml
 	if vargs.Tag.Len() == 0 {
-		var buildTag = getTagFromBuildInfo(workspace.Path)
-		var imageName = fmt.Sprintf("%s:%s", vargs.Repo, buildTag)
-		writeImageName(workspace.Path, imageName)
-		vargs.Tag = StrSlice{ []string{"latest", buildTag} }
+		// Set default
+		vargs.Tag = StrSlice{ []string{"latest"} }
+		// Replace defaults if .drone.tags.json has tags
+		buildTags := getTagsFromBuildInfo(workspace.Path)
+		if buildTags != nil {
+			vargs.Tag = StrSlice{ buildTags }
+		}
+		// var imageName = fmt.Sprintf("%s:%s", vargs.Repo, buildTag)
+		// writeImageName(workspace.Path, imageName)
 	}
 	// Get absolute path for 'save' file
 	if len(vargs.Save.File) != 0 {
@@ -277,33 +278,42 @@ func authorize(d *Docker) error {
 	return ioutil.WriteFile(path, []byte(data), 0644)
 }
 
-// conditionally read in .buildinfo.json and return resulting data structure
-func getTagFromBuildInfo(workspacePath string) string {
-	var path = filepath.Join(workspacePath, ".buildinfo.json")
+// conditionally read in .droneTags.yml and return resulting data structure
+func getTagsFromBuildInfo(workspacePath string) []string {
+	fmt.Println("Looking For .droneTags.yml")
+	var path = filepath.Join(workspacePath, ".droneTags.yml")
 	_, err := os.Stat(path)
 	if(err == nil) {
 		file, fileErr := ioutil.ReadFile(path)
 		if fileErr == nil {
-			var jsonobject BuildInfoType
-			json.Unmarshal(file, &jsonobject)
-			tag := fmt.Sprintf("%s_%s_%s_%s_%d_%s", jsonobject.Owner, jsonobject.Repository, jsonobject.Branch, jsonobject.Version, jsonobject.Build, jsonobject.Slug)
-			fmt.Println("Tag generated from .buildinfo.json:", tag)
-			return tag
+			fmt.Println("Found .droneTags.yml")
+			var droneTags BuildInfoType
+			yamlErr := yaml.Unmarshal(file, &droneTags)
+			if(yamlErr == nil) {
+				for _,tag := range droneTags.Tags {
+					fmt.Println("Tag generated from .droneTags.yml:", tag)
+				}
+				return droneTags.Tags
+			} else {
+				fmt.Println("ERROR: Could not parse .droneTags.yml")
+				os.Exit(1)
+				return nil
+			}
 		} else {
-			return ""
+			return nil
 		}
 	} else {
-		return ""
+		return nil
 	}
 }
 
-func writeImageName(workspacePath string, imageName string) {
-	fmt.Println("Writing image name to .docker.json.")
-	var path = filepath.Join(workspacePath, ".docker.json")
-	data := map[string]string{"image": imageName}
-	bytes, _ := json.Marshal(data)
-	ioutil.WriteFile(path, bytes, 0644)
-}
+// func writeImageName(workspacePath string, imageName string) {
+// 	fmt.Println("Writing image name to .docker.json.")
+// 	var path = filepath.Join(workspacePath, ".docker.json")
+// 	data := map[string]string{"image": imageName}
+// 	bytes, _ := json.Marshal(data)
+// 	ioutil.WriteFile(path, bytes, 0644)
+// }
 
 var dockerconf = `
 {
